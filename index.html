@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Network Finder</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom focus ring for better accessibility and aesthetics, updated to new theme color */
+        .custom-focus-ring:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(211, 17, 69, 0.4);
+        }
+        /* Custom styling for the checkbox to match the theme color */
+        #smartNetworkFilter:checked {
+            background-color: #D31145;
+            border-color: #D31145;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <!-- Header Section -->
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Ice's Smart Network</h1>
+            <p class="mt-2 text-lg text-gray-600">Search for hospitals, specialists, and packages.</p>
+        </header>
+
+        <!-- Search and Filter Section -->
+        <div class="space-y-6">
+            <!-- Search Bar -->
+            <div class="relative w-full max-w-2xl mx-auto">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                     <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+                <input type="text" id="searchInput" placeholder="Search by hospital or package name (e.g., 'BNH' or 'Health Check-up')" class="w-full pl-12 pr-4 py-3 text-base border border-gray-300 rounded-full shadow-sm focus:ring-2 focus:ring-[#D31145] focus:border-[#D31145] transition duration-150 ease-in-out">
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="flex flex-col md:flex-row items-center justify-center gap-4 flex-wrap">
+                <!-- Dropdowns -->
+                <select id="provinceFilter" class="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg bg-white shadow-sm custom-focus-ring">
+                    <option value="">All Provinces</option>
+                </select>
+                <select id="zoneFilter" class="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg bg-white shadow-sm custom-focus-ring">
+                    <option value="">All Zones</option>
+                </select>
+                <select id="packageFilter" class="w-full md:w-auto px-4 py-2 border border-gray-300 rounded-lg bg-white shadow-sm custom-focus-ring">
+                    <option value="">All Packages</option>
+                </select>
+                <!-- Smart Network Checkbox -->
+                <div class="flex items-center">
+                    <input type="checkbox" id="smartNetworkFilter" class="h-4 w-4 rounded border-gray-300 focus:ring-[#D31145] cursor-pointer">
+                    <label for="smartNetworkFilter" class="ml-2 text-sm font-medium text-gray-700 select-none cursor-pointer">Only Smart Network</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hospital List -->
+        <main id="hospitalGrid" class="mt-10 md:mt-12 grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+            <!-- Hospital cards will be injected here by JavaScript -->
+        </main>
+
+        <!-- No Results Message -->
+        <div id="noResults" class="hidden text-center mt-12">
+            <h3 class="text-xl font-semibold text-gray-700">No Hospitals Found</h3>
+            <p class="text-gray-500 mt-2">Try adjusting your search or filter criteria.</p>
+        </div>
+    </div>
+
+    <script>
+        // --- MOCK API DATA ---
+        // This array simulates the data you would get from your API.
+        const hospitalsData = [
+            {
+                name: "Samitivej Sukhumvit Hospital",
+                zone: "Central",
+                province: "Bangkok",
+                isSmartNetwork: true,
+                phone: "02-022-2222",
+                website: "https://www.samitivejhospitals.com/",
+                locationUrl: "https://goo.gl/maps/example1",
+                packages: ["Health Check-up", "Maternity Package", "Childhood Vaccination"]
+            },
+            {
+                name: "BNH Hospital",
+                zone: "Central",
+                province: "Bangkok",
+                isSmartNetwork: false,
+                phone: "02-022-8888",
+                website: "https://www.bnhhospital.com/",
+                locationUrl: "https://goo.gl/maps/example2",
+                packages: ["Health Check-up", "Dental Care", "Physical Therapy"]
+            },
+            {
+                name: "Bangkok Hospital Chiang Mai",
+                zone: "North",
+                province: "Chiang Mai",
+                isSmartNetwork: true,
+                phone: "05-208-9888",
+                website: "https://www.bangkokhospital-chiangmai.com/",
+                locationUrl: "https://goo.gl/maps/example3",
+                packages: ["Physical Therapy", "Emergency Care"]
+            },
+            {
+                name: "Bangkok Hospital Phuket",
+                zone: "South",
+                province: "Phuket",
+                isSmartNetwork: false,
+                phone: "07-625-4425",
+                website: "https://www.bangkokhospitalphuket.com/",
+                locationUrl: "https://goo.gl/maps/example4",
+                packages: ["Health Check-up", "Emergency Care", "Dental Care"]
+            },
+            {
+                name: "Phyathai 2 Hospital",
+                zone: "Central",
+                province: "Bangkok",
+                isSmartNetwork: true,
+                phone: "02-617-2444",
+                website: "https://www.phyathai.com/en/pyt2",
+                locationUrl: "https://goo.gl/maps/example5",
+                packages: ["Maternity Package", "Health Check-up", "LASIK"]
+            },
+             {
+                name: "Chiangmai Ram Hospital",
+                zone: "North",
+                province: "Chiang Mai",
+                isSmartNetwork: false,
+                phone: "05-392-0300",
+                website: "https://www.chiangmairam.com/",
+                locationUrl: "https://goo.gl/maps/example6",
+                packages: ["General Surgery", "Health Check-up"]
+            },
+            {
+                name: "Vejthani Hospital",
+                zone: "Central",
+                province: "Bangkok",
+                isSmartNetwork: true,
+                phone: "02-734-0000",
+                website: "https://www.vejthani.com/",
+                locationUrl: "https://goo.gl/maps/example7",
+                packages: ["Spine Center", "Orthopedics", "Health Check-up"]
+            },
+            {
+                name: "Pattaya International Hospital",
+                zone: "East",
+                province: "Chonburi",
+                isSmartNetwork: false,
+                phone: "03-842-8374",
+                website: "https://www.pattayainterhospital.com/",
+                locationUrl: "https://goo.gl/maps/example8",
+                packages: ["Emergency Care", "Dental Care"]
+            },
+            {
+                name: "Thonburi Hospital",
+                zone: "Central",
+                province: "Bangkok",
+                isSmartNetwork: false,
+                phone: "02-487-2000",
+                website: "https://www.thonburihospital.com/",
+                locationUrl: "https://goo.gl/maps/example9",
+                packages: ["Health Check-up", "Cardiology"]
+            },
+            {
+                name: "Samitivej Chonburi Hospital",
+                zone: "East",
+                province: "Chonburi",
+                isSmartNetwork: true,
+                phone: "03-845-2222",
+                website: "https://www.samitivejchonburi.com/",
+                locationUrl: "https://goo.gl/maps/example10",
+                packages: ["Pediatrics", "Health Check-up", "Maternity Package"]
+            },
+            {
+                name: "AEK Udon International Hospital",
+                zone: "Northeast",
+                province: "Udon Thani",
+                isSmartNetwork: false,
+                phone: "04-234-2555",
+                website: "https://www.aekudon.com/",
+                locationUrl: "https://goo.gl/maps/example11",
+                packages: ["General Surgery", "Emergency Care", "Internal Medicine"]
+            }
+        ];
+
+        // --- DOM ELEMENTS ---
+        const searchInput = document.getElementById('searchInput');
+        const provinceFilter = document.getElementById('provinceFilter');
+        const zoneFilter = document.getElementById('zoneFilter');
+        const packageFilter = document.getElementById('packageFilter');
+        const smartNetworkFilter = document.getElementById('smartNetworkFilter');
+        const hospitalGrid = document.getElementById('hospitalGrid');
+        const noResults = document.getElementById('noResults');
+
+        // --- FUNCTIONS ---
+
+        /**
+         * Populates filter dropdowns with unique values from the hospital data.
+         */
+        function populateFilters() {
+            const provinces = [...new Set(hospitalsData.map(h => h.province))];
+            const zones = [...new Set(hospitalsData.map(h => h.zone))];
+            const packages = [...new Set(hospitalsData.flatMap(h => h.packages))];
+
+            provinces.sort().forEach(province => {
+                const option = document.createElement('option');
+                option.value = province;
+                option.textContent = province;
+                provinceFilter.appendChild(option);
+            });
+
+            zones.sort().forEach(zone => {
+                const option = document.createElement('option');
+                option.value = zone;
+                option.textContent = zone;
+                zoneFilter.appendChild(option);
+            });
+
+            packages.sort().forEach(pkg => {
+                const option = document.createElement('option');
+                option.value = pkg;
+                option.textContent = pkg;
+                packageFilter.appendChild(option);
+            });
+        }
+        
+        /**
+         * Renders the list of hospitals to the grid.
+         * @param {Array} hospitals - The array of hospital objects to display.
+         */
+        function renderHospitals(hospitals) {
+            hospitalGrid.innerHTML = ''; // Clear existing cards
+
+            if (hospitals.length === 0) {
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+            }
+
+            hospitals.forEach(hospital => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-xl shadow-md overflow-hidden transition-transform transform hover:-translate-y-1 flex flex-col";
+                
+                // Smart network tag (conditional)
+                const smartNetworkTag = hospital.isSmartNetwork
+                    ? `<div class="absolute top-0 right-0 bg-[#D31145] text-white text-xs font-bold px-3 py-1 rounded-bl-xl">Smart Network</div>`
+                    : '';
+
+                // Package list items
+                const packageItems = hospital.packages.map(pkg => 
+                    `<li class="bg-gray-200 text-gray-700 text-sm font-medium px-3 py-1 rounded-full">${pkg}</li>`
+                ).join('');
+
+                card.innerHTML = `
+                    <div class="p-6 relative flex-grow">
+                        ${smartNetworkTag}
+                        <h3 class="text-xl font-bold text-gray-900">${hospital.name}</h3>
+                        <p class="text-gray-500 mt-1 flex items-center">
+                            <svg class="w-4 h-4 mr-1.5 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                            ${hospital.province}
+                        </p>
+                        
+                        <div class="mt-4">
+                            <h4 class="text-sm font-semibold text-gray-600 mb-2">Available Packages:</h4>
+                            <ul class="flex flex-wrap gap-2">
+                                ${packageItems}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-4 border-t border-gray-200 grid grid-cols-3 gap-2">
+                        <a href="tel:${hospital.phone}" class="flex items-center justify-center px-3 py-2 text-sm font-semibold text-[#D31145] bg-red-100 hover:bg-red-200 rounded-lg transition-colors">
+                            <svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                            Call
+                        </a>
+                        <a href="${hospital.website}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center px-3 py-2 text-sm font-semibold text-[#D31145] bg-red-100 hover:bg-red-200 rounded-lg transition-colors">
+                            <svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                            Website
+                        </a>
+                        <a href="${hospital.locationUrl}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center px-3 py-2 text-sm font-semibold text-[#D31145] bg-red-100 hover:bg-red-200 rounded-lg transition-colors">
+                             <svg class="w-4 h-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                            Location
+                        </a>
+                    </div>
+                `;
+                hospitalGrid.appendChild(card);
+            });
+        }
+        
+        /**
+         * Applies all active filters and search queries to the hospital data.
+         */
+        function applyFilters() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const selectedProvince = provinceFilter.value;
+            const selectedZone = zoneFilter.value;
+            const selectedPackage = packageFilter.value;
+            const onlySmartNetwork = smartNetworkFilter.checked;
+
+            const filteredHospitals = hospitalsData.filter(hospital => {
+                const nameMatch = hospital.name.toLowerCase().includes(searchTerm);
+                const packageMatch = hospital.packages.some(pkg => pkg.toLowerCase().includes(searchTerm));
+                const searchMatch = nameMatch || packageMatch;
+
+                const provinceMatch = !selectedProvince || hospital.province === selectedProvince;
+                const zoneMatch = !selectedZone || hospital.zone === selectedZone;
+                const packageFilterMatch = !selectedPackage || hospital.packages.includes(selectedPackage);
+                const smartNetworkMatch = !onlySmartNetwork || hospital.isSmartNetwork;
+
+                return searchMatch && provinceMatch && zoneMatch && packageFilterMatch && smartNetworkMatch;
+            });
+
+            renderHospitals(filteredHospitals);
+        }
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            populateFilters();
+            renderHospitals(hospitalsData);
+
+            // Add event listeners to trigger filtering
+            searchInput.addEventListener('input', applyFilters);
+            provinceFilter.addEventListener('change', applyFilters);
+            zoneFilter.addEventListener('change', applyFilters);
+            packageFilter.addEventListener('change', applyFilters);
+            smartNetworkFilter.addEventListener('change', applyFilters);
+        });
+
+    </script>
+</body>
+</html>
+
+
